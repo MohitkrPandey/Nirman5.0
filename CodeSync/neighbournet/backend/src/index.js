@@ -10,6 +10,7 @@ dotenv.config();
 
 const authRoutes = require('./routes/auth');
 const requestRoutes = require('./routes/requests');
+const oauthRoutes = require('./routes/oauth');
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +59,7 @@ app.set('userSocketMap', userSocketMap);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/oauth', oauthRoutes);
 
 const PORT = process.env.PORT || 3000;
 

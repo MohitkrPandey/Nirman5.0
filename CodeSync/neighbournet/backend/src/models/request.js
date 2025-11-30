@@ -6,27 +6,39 @@ const requestSchema = new mongoose.Schema({
         ref: 'User',
         required: true,
     },
-    type: {
-        type: String,
+    types: {
+        type: [String],
+        enum: ['food', 'medical', 'rescue', 'transport', 'shelter', 'water', 'power', 'other'],
         required: true,
+        validate: {
+            validator: function (v) {
+                return v && v.length > 0;
+            },
+            message: 'At least one type is required'
+        }
     },
     description: {
         type: String,
         required: true,
+        maxlength: 500,
     },
     contact: {
         type: String,
+        required: true,
     },
     location: {
         type: {
             type: String,
             enum: ['Point'],
-            default: 'Point',
-        },
-        coordinates: {
-            type: [Number], // [longitude, latitude]
             required: true,
         },
+        coordinates: {
+            type: [Number],
+            required: true,
+        },
+    },
+    address: {
+        type: String,
     },
     status: {
         type: String,
@@ -36,6 +48,12 @@ const requestSchema = new mongoose.Schema({
     assignedTo: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
+    },
+    assignedAt: {
+        type: Date,
+    },
+    completedAt: {
+        type: Date,
     },
 }, { timestamps: true });
 

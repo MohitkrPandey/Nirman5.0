@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+:root {
+  --hero-gradient-start: #1766E0;
+  --hero-gradient-end: #2FA1FF;
+  --accent-green: #12B981;
+  --top-bar: #0EA5A4;
+  --logo-text: #0F172A;
+  --card-bg: #FFFFFF;
+  --light-gray: #F3F4F6;
+  --nn-hero-start: #1766E0;
+  --nn-hero-end: #2FA1FF;
+  --nn-accent: #12B981;
+  --nn-topbar: #0EA5A4;
+  --nn-logo: #0F172A;
+  --nn-card-bg: #FFFFFF;
+  --nn-light-gray: #F3F4F6;
+  --nn-cta-grad-start: #6A5AF9;
+  --nn-cta-grad-end: #9B7BFF;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

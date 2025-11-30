@@ -1,87 +1,120 @@
-let authToken = localStorage.getItem('token');
+// API helper with centralized auth token management
+let authToken = null;
 
 export const setAuthToken = (token) => {
+  authToken = token;
   if (token) {
-    authToken = token;
     localStorage.setItem('token', token);
   } else {
-    authToken = null;
     localStorage.removeItem('token');
   }
 };
 
-const apiFetch = async (endpoint, options = {}) => {
+export const getAuthToken = () => {
+  if (!authToken) {
+    authToken = localStorage.getItem('token');
+  }
+  return authToken;
+};
+
+export const clearAuthToken = () => {
+  authToken = null;
+  localStorage.removeItem('token');
+};
+
+const apiFetch = async (url, options = {}) => {
+  const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
 
-  if (authToken) {
-    headers['Authorization'] = `Bearer ${authToken}`;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`/api${endpoint}`, {
+  const response = await fetch(url, {
     ...options,
     headers,
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || errorData.message || `Request failed with status ${response.status}`);
+  // Get response text first
+  const responseText = await response.text();
+
+  // Check if response is empty
+  if (!responseText) {
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return null;
   }
 
-  // Handle 204 No Content
-  if (response.status === 204) return null;
-
-  return response.json();
+  // Try to parse as JSON
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    try {
+      const data = JSON.parse(responseText);
+      if (!response.ok) {
+        throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
+      }
+      return data;
+    } catch (parseError) {
+      if (!response.ok) {
+        throw new Error(`Server error: ${responseText.substring(0, 100)}`);
+      }
+      throw parseError;
+    }
+  } else {
+    throw new Error(`Non-JSON response: ${responseText.substring(0, 100)}`);
+  }
 };
 
-export const getRequests = (lat, lng, radiusKm) => {
-  // Note: Using radiusKm to match backend expectation
-  const params = new URLSearchParams({ lat, lng, radiusKm });
-  return apiFetch(`/requests?${params.toString()}`);
-};
-
-export const createRequest = (payload) => {
-  return apiFetch('/requests', {
+// Auth endpoints
+export const login = (email, password) => {
+  return apiFetch('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ email, password }),
+  });
+};
+
+export const signup = (name, email, password, lat, lng, role) => {
+  return apiFetch('/api/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password, lat, lng, role }),
+  });
+};
+
+export const getCurrentUser = () => {
+  return apiFetch('/api/auth/me');
+};
+
+export const updateRole = (role) => {
+  return apiFetch('/api/auth/role', {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
+};
+
+// Request endpoints
+export const getRequests = (lat, lng, radiusKm = 5) => {
+  return apiFetch(`/api/requests?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`);
+};
+
+export const createRequest = (types, description, contact, lat, lng, address = '') => {
+  return apiFetch('/api/requests', {
+    method: 'POST',
+    body: JSON.stringify({ types, description, contact, lat, lng, address }),
   });
 };
 
 export const assignRequest = (id) => {
-  return apiFetch(`/requests/${id}/assign`, {
+  return apiFetch(`/api/requests/${id}/assign`, {
     method: 'POST',
   });
 };
 
-/*
-// Example Usage:
-
-import { setAuthToken, getRequests, createRequest } from './lib/api';
-
-// 1. Set the token (e.g., after login)
-setAuthToken('your-jwt-token-here');
-
-// 2. Get requests
-try {
-  const requests = await getRequests(51.505, -0.09, 5);
-  console.log('Requests:', requests);
-} catch (error) {
-  console.error('Failed to fetch requests:', error.message);
-}
-
-// 3. Create a request
-try {
-  const newRequest = await createRequest({
-    type: 'Help Needed',
-    description: 'Need groceries',
-    contact: '555-0123',
-    lat: 51.505,
-    lng: -0.09
+export const completeRequest = (id) => {
+  return apiFetch(`/api/requests/${id}/complete`, {
+    method: 'POST',
   });
-  console.log('Created Request:', newRequest);
-} catch (error) {
-  console.error('Failed to create request:', error.message);
-}
-*/
+};
